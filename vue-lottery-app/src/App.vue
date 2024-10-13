@@ -24,12 +24,18 @@ const deleteUser = (user: User) => {
 }
 
 const addUser = (user: User) => {
-  if(users.value.filter(u => u.email === user.email).length > 0){
-    buttonRef.value.click();
+  if (users.value.filter(u => u.email === user.email).length > 0) {
+    if (buttonRef.value) {
+      buttonRef.value.click();
+    } else {
+      console.warn("Кнопку неможливо натиснути.");
+    }
   }
-  users.value.push(user)
+
+  users.value.push(user);
   updateUsersInStorage();
 }
+
 
 const deleteWinner = (user: User) => {
   console.log(user)
