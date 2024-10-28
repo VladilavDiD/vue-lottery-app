@@ -19,10 +19,4 @@
   margin-right: 20px;
   margin-left: 20px;
 }
-
-.horizontal-line {
-  width: 75%;
-  height: 1px;
-  border: 1px solid black
-}
 </style>

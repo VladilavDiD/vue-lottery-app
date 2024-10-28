@@ -6,7 +6,7 @@
   <div class="wrapper">
     <h1>Home</h1>
     <div class="horizontal-line"></div>
-    <p>Welcome to the lab 8</p>
+    <p>Головна сторінка цієї доповненої лабораторної</p>
   </div>
 </template>
 
@@ -20,9 +20,4 @@
   margin-left: 20px;
 }
 
-.horizontal-line {
-  width: 75%;
-  height: 1px;
-  border: 1px solid black
-}
 </style>

@@ -6,7 +6,7 @@ import AppNavigation from "@/components/AppNavigation.vue";
 <template>
   <div class="header">
     <div class="header__title">
-      <h1>JoyCasino</h1>
+      <h1>Ukrainian Roulette</h1>
     </div>
     <div class="header__navigation">
       <AppNavigation></AppNavigation>
