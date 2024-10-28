@@ -1,69 +1,96 @@
 <script setup lang="ts">
-import {computed, ref, useTemplateRef, watch} from "vue";
-import type {User} from "@/models/user";
-import Button from "@/components/VueButton.vue";
+import {computed, ref} from "vue";
+import type {CreateUserRequest} from "@/models/user";
 import VueButton from "@/components/VueButton.vue";
 import VueInput from "@/components/VueInput.vue";
 
-const phoneNumberPattern = new RegExp("");
-
-const user = ref<User>({
-  email: '',
-  dateOfBirth: null,
-  name: '',
-  phoneNumber: ''
+const touchedFields = ref({
+  email: false,
+  name: false,
+  avatar: false,
+  password: false,
+  role: false
 });
 
-const emit = defineEmits(['add-user']);
+const user = ref<CreateUserRequest>({
+  email: '',
+  name: '',
+  avatar: '',
+  password: '',
+  role: ''
+});
+
+const emit = defineEmits({
+  addUser: (user: CreateUserRequest) => {
+    user.role = user.role.toLowerCase()
+    return user && user.name.length > 0
+        && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user.email)
+        && user.password
+        && user.avatar
+        && /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/.test(user.avatar)
+  }
+});
+
 const formSubmitted = ref(false);
 
 const emailIsValid = computed(() => {
+  if (user.value.email.length === 0 && !touchedFields.value.email) {
+    return null;
+  }
   const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   return regex.test(user.value.email);
 });
 
-const phoneNumberIsValid = computed(() => {
-  const regex = /^\+?3?8?(0\d{9})$/;
-  return regex.test(user.value.phoneNumber);
-})
-
 const usernameIsValid = computed(() => {
-  return user.value.name;
+  if (user.value.name.length === 0 && !touchedFields.value.name) {
+    return null;
+  }
+  return !!user.value.name;
 });
 
-const dateOfBirthIsValid = computed(() => {
-  return user.value.dateOfBirth && new Date(user.value.dateOfBirth) < new Date();
+const passwordIsValid = computed(() => {
+    if(user.value.password.length === 0 && !touchedFields.value.password){
+      return null;
+    }
+    return !!user.value.password;
 });
-const onSubmit = () => {
-  formSubmitted.value = true;
-  let isValid = true;
 
-  if (!emailIsValid.value) {
-    isValid = false;
+const avatarIsValid = computed(() => {
+  if(user.value.avatar.length === 0  && !touchedFields.value.avatar){
+    return null;
+  }
+  return !!user.value.avatar && /^https?:\/\/(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&\/=]*)$/.test(user.value.avatar);
+});
+
+const roleIsValid = computed(() => {
+  if(user.value.role.length === 0 && !touchedFields.value.role) {
+    return null;
   }
 
-  if (!phoneNumberIsValid.value) {
-    isValid = false;
-  }
+  return !!user.value.role
+      && (user.value.role.toLowerCase() === 'customer'
+          || user.value.role.toLowerCase() === 'admin')
+});
 
-  if (!usernameIsValid.value) {
-    isValid = false;
-  }
-
-  if (!dateOfBirthIsValid.value) {
-    isValid = false;
-  }
-
-  if (!isValid) {
-    return;
-  }
-
-  emit('add-user', {...user.value});
-  formSubmitted.value = false;
-  user.value.dateOfBirth = null;
+function clearValues() {
+  user.value.password = '';
   user.value.name = '';
-  user.value.phoneNumber = '';
+  user.value.avatar = '';
   user.value.email = '';
+}
+
+function clearTouchedFields() {
+  touchedFields.value.avatar = false;
+  touchedFields.value.email = false;
+  touchedFields.value.name = false;
+  touchedFields.value.password = false;
+}
+
+const onSubmit = () => {
+  emit('addUser', {...user.value});
+  formSubmitted.value = false;
+  clearValues();
+  clearTouchedFields();
 };
 </script>
 
@@ -75,39 +102,62 @@ const onSubmit = () => {
       <p class="text-grey">Please fill in all the fields</p>
       <div class="mb-3">
         <label for="name" class="form-label">Name</label>
-        <VueInput id="name" :class="{ 'is-invalid': formSubmitted && !usernameIsValid, 'is-valid': usernameIsValid}"
-                  placeholder="Enter user name" v-model="user.name" type="text"></VueInput>
+        <VueInput :is-valid="usernameIsValid"
+                  id="name"
+                  placeholder="Enter user name"
+                  v-model="user.name"
+                  @blur="touchedFields.name"></VueInput>
         <div class="invalid-feedback">
           Username is required.
         </div>
       </div>
 
       <div class="mb-3">
-        <label for="dob" class="form-label">Date of Birth</label>
-        <VueInput id="dob"
-                  :class="{ 'is-invalid': formSubmitted && !dateOfBirthIsValid, 'is-valid': dateOfBirthIsValid }"
-                  v-model="user.dateOfBirth" placeholder="Enter date of birth" type="date"></VueInput>
+        <label for="password" class="form-label">Password</label>
+        <VueInput id="password"
+                  :is-valid="passwordIsValid"
+                  v-model="user.password"
+                  placeholder="Enter password"
+                  type="text"
+                  @blur="touchedFields.password"></VueInput>
         <div class="invalid-feedback">
-          Date of Birth is required and should be less than present.
+          Password is required.
         </div>
       </div>
 
       <div class="mb-3">
         <label for="email" class="form-label">Email</label>
-        <VueInput id="email" :class="{ 'is-invalid': formSubmitted && !emailIsValid, 'is-valid': emailIsValid }"
-                  placeholder="Enter email" type="text" v-model="user.email"></VueInput>
+        <VueInput id="email"
+                  :is-valid="emailIsValid"
+                  placeholder="Enter email"
+                  v-model="user.email"
+                  @blur="touchedFields.email"></VueInput>
         <div class="invalid-feedback">
           Email is required and should be in valid format.
         </div>
       </div>
 
       <div class="mb-3">
-        <label for="phoneNumber" class="form-label">Phone Number</label>
-        <VueInput id="phoneNumber" v-model="user.phoneNumber" pattern="^\+?3?8?(0\d{9})$"
-                  :class="{ 'is-invalid': formSubmitted && !phoneNumberIsValid, 'is-valid': phoneNumberIsValid }"
-                  placeholder="Enter phone number" type="text"></VueInput>
+        <label for="role" class="form-label">Role (customer or admin)</label>
+        <VueInput id="role"
+                  :is-valid="roleIsValid"
+                  placeholder="Choose role"
+                  v-model="user.role"
+                  @blur="touchedFields.role"></VueInput>
         <div class="invalid-feedback">
-          Phone Number is required and should be in valid format for Ukraine.
+          Role is required and should be either 'admin' or 'customer'
+        </div>
+      </div>
+
+      <div class="mb-3">
+        <label for="avatar" class="form-label">Avatar</label>
+        <VueInput id="avatar"
+                  :is-valid="avatarIsValid"
+                  v-model="user.avatar"
+                  placeholder="Enter avatar URL"
+                  @blur="touchedFields.avatar"></VueInput>
+        <div class="invalid-feedback">
+          Avatar is required and should be a valid url.
         </div>
       </div>
 
